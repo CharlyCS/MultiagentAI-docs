@@ -1,3 +1,15 @@
 langgraph
 docxtpl
 langchain
+pyyaml
+ddgs
+beautifulsoup4
+pillow
+python-dotenv
+openai
+cairosvg
+requests
+langchain-openai
+docxcompose
+python-docx
+pydantic

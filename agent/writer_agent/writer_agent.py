@@ -1,11 +1,12 @@
 from langchain.agents import Tool, AgentExecutor
 from openai import OpenAI
-import yaml
-from prompts import DEFAULT_PROMPT
+from prompts import prompt_template
+from dotenv import load_dotenv
+import os
 
-client = OpenAI()
-
-data = yaml.safe_load(open("data/config.yaml"))
+load_dotenv()
+model_name = os.getenv("OPENAI_MODEL")
+api_key = os.getenv("OPENAI_API_KEY")
 
 response = client.responses.create(model="gpt-6-astra", input="Write a short bedtime story about a unicorn.")
 
@@ -14,12 +15,16 @@ print(response.output_text)
 
 class WriterAgent(question: str):
 
-    def __init__(self, self.question: str, model_name: str = "gpt4o-mini") -> None:
+    def __init__(self, self.question: str) -> None:
         self.model_name = model_name
         self.question = question
+        self.client = OpenAI(model=self.model_name, 
+                            api_key=api_key) 
 
-    def generate_text(self, prompt: str, max_length: int = 50) -> str:
-        inputs = self.tokenizer(prompt, return_tensors="pt")
-        output = self.model.generate(**inputs, max_length=max_length)
-        generated_text = self.tokenizer.decode(output[0], skip_special_tokens=True)
-        return generated_text
+    def generate_text(self, max_length: int = 100) -> str:
+        response = self.client.responses.create(
+            model=self.model_name,
+            input=prompt_template.format(question=self.question),
+            max_tokens=max_length
+        )
+        return response.output_text

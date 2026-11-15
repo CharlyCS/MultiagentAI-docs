@@ -1,0 +1,14 @@
+client: "Ghost Producciones"
+engineer: "Carlos Coronel"
+sales_team: "Bruno Chamorro"
+table: 
+  place: "Hotel Westin"
+  date: "14/11/2026"
+images:
+  pictures_event: { origin: local, root: "fotos", ancho_cm: 15 }
+  picture_logo:    { origin: web,   url: "*", ancho_cm: 10 }
+description: "text"
+
+
+
+

@@ -1,29 +1,29 @@
 # MultiagentAI-docs
 
-Sistema multi-agente (LangGraph) que genera un **informe de servicio en Word** a partir de `data/config.yaml` y la plantilla `template/template.docx`.
+Multi-agent system (LangGraph) that generates a **service report in Word** from `data/config.yaml` and the template `template/template.docx`.
 
-- **image_agent**: busca en la web el logo de la empresa cliente (gratis, sin API keys de búsqueda).
-- **writer_agent**: redacta la descripción del servicio a partir de las notas del ingeniero y se auto-revisa.
-- **photos**: toma las fotos locales del evento.
-- **render_doc**: llena la plantilla y guarda el `.docx` en `output/`.
+- **image_agent**: searches the web for the client company's logo (free, no search API keys).
+- **writer_agent**: writes the service description from the engineer's notes and reviews itself.
+- **photos**: collects the local event photos.
+- **render_doc**: fills the template and saves the `.docx` to `output/`.
 
-Las tres primeras ramas se ejecutan en paralelo.
+The first three branches run in parallel.
 
-## Instalación
+## Installation
 
 ```bash
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 ```
 
-Crear `.env` en la raíz:
+Create a `.env` file in the project root:
 
 ```env
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL= "selected by you"
 ```
 
-## Configuración (`data/config.yaml`)
+## Configuration (`data/config.yaml`)
 
 ```yaml
 client: "Ghost Producciones"
@@ -33,63 +33,63 @@ table:
   place: "Hotel Westin"
   date: "14/11/2026"
 images:
-  pictures_event: { origin: local, root: "fotos", ancho_cm: 15 }   # carpeta con fotos
-  picture_logo:    { origin: web,   url: "*",     ancho_cm: 10 }   # "*" = buscar con el agente
-description: "notas del ingeniero sobre el evento"
+  pictures_event: { origin: local, root: "fotos", ancho_cm: 15 }   # folder with photos
+  picture_logo:    { origin: web,   url: "*",     ancho_cm: 10 }   # "*" = search with the agent
+description: "engineer's notes about the event"
 ```
 
-| Campo | Uso |
+| Field | Usage |
 |---|---|
-| `picture_logo.url` | `"*"` busca el logo con el agente; una URL lo descarga directo; `origin: local` + `root` usa un archivo. |
-| `pictures_event.root` | Carpeta de fotos (relativa al proyecto o a `data/`). |
-| `description` | Notas para el writer. Si está vacío (o `"text"`), el informe indica que el servicio fue satisfactorio. |
+| `picture_logo.url` | `"*"` searches for the logo with the agent; a URL downloads it directly; `origin: local` + `root` uses a local file. |
+| `pictures_event.root` | Photos folder (relative to the project root or to `data/`). |
+| `description` | Notes for the writer. If empty (or `"text"`), the report states that the service was completed satisfactorily. |
 
-La plantilla usa: `client`, `engineer`, `sales_team`, `table.place`, `table.date`, `picture_logo`, `pictures_event`, `description` y, opcionalmente, una tabla `{%tr for r in raw %}` con `r.descripcion` / `r.estado`.
+The template uses: `client`, `engineer`, `sales_team`, `table.place`, `table.date`, `picture_logo`, `pictures_event`, `description` and, optionally, a table `{%tr for r in raw %}` with `r.descripcion` / `r.estado`.
 
-## Uso
+## Usage
 
 ```bash
-venv/bin/python orchestrator.py                                  # usa data/config.yaml
-venv/bin/python orchestrator.py --notes "Se instalaron 4 pantallas LED..."
-venv/bin/python -m agent.image_agent "Nombre Empresa"            # probar solo el logo
-venv/bin/python -m agent.writer_agent.writer_agent "notas..."    # probar solo el texto
+venv/bin/python orchestrator.py                                  # uses data/config.yaml
+venv/bin/python orchestrator.py --notes "4 LED screens were installed..."
+venv/bin/python -m agent.image_agent "Company Name"               # test only the logo search
+venv/bin/python -m agent.writer_agent.writer_agent "notes..."    # test only the writer
 ```
 
-Salida: `output/Informe_<cliente>_<fecha>.docx`. El logo queda en `data/image/logo_<cliente>.png`.
+Output: `output/Informe_<client>_<date>.docx`. The logo is saved to `data/image/logo_<client>.png`.
 
-## Estructura
+## Structure
 
 ```
-orchestrator.py          grafo principal
-core/                    config, logo, fotos y render del Word
+orchestrator.py          main graph
+core/                    config, logo, photos and Word rendering
 agent/image_agent/
-  tools/                 búsquedas gratuitas (DuckDuckGo, web oficial, Wikidata, favicon)
-  workflow/              paso 1: estrategias fijas (rápido y barato)
-  react_agent/           paso 2: agente ReAct (LLM + ToolNode) si el paso 1 falla
-  verifier.py            el LLM con visión elige el logo correcto
-  image_web_agent.py     une workflow -> react_agent -> respaldo
+  tools/                 free searches (DuckDuckGo, official website, Wikidata, favicon)
+  workflow/              step 1: fixed strategies (fast and cheap)
+  react_agent/           step 2: ReAct agent (LLM + ToolNode) if step 1 fails
+  verifier.py            vision LLM picks the correct logo
+  image_web_agent.py     joins workflow -> react_agent -> fallback
 agent/writer_agent/
   prompt/                prompts
-  nodes.py, graph.py     redactar -> revisar -> corregir
+  nodes.py, graph.py     draft -> review -> revise
 ```
 
-## Variables de entorno opcionales
+## Optional environment variables
 
-| Variable | Default | Descripción |
+| Variable | Default | Description |
 |---|---|---|
-| `LOGO_VERIFY_WITH_LLM` | `1` | `0` desactiva el LLM en el image_agent (solo heurística). |
-| `LOGO_REACT_MAX_STEPS` | `12` | Pasos máximos del agente ReAct. |
-| `LOGO_DOMAIN_TLDS` | `.pe,.com.pe,.com,...` | Dominios a probar si el buscador falla. |
+| `LOGO_VERIFY_WITH_LLM` | `1` | `0` disables the LLM in the image_agent (heuristics only). |
+| `LOGO_REACT_MAX_STEPS` | `12` | Maximum steps of the ReAct agent. |
+| `LOGO_DOMAIN_TLDS` | `.pe,.com.pe,.com,...` | Domains to try if the search engine fails. |
 
-## Grafos
+## Graphs
 
-### Orquestador
+### Orchestrator
 
-![Orquestador](img/orchestrator.png)
+![Orchestrator](img/orchestrator.png)
 
 ### Image agent
 
-| Principal | Workflow (paso 1) | ReAct (paso 2) |
+| Main | Workflow (step 1) | ReAct (step 2) |
 |---|---|---|
 | ![image_agent](img/image_agent.png) | ![workflow](img/image_workflow.png) | ![react](img/image_react_agent.png) |
 
@@ -97,7 +97,7 @@ agent/writer_agent/
 
 ![writer_agent](img/writer_agent.png)
 
-Para regenerar las imágenes:
+To regenerate the images:
 
 ```python
 from orchestrator import build_graph
